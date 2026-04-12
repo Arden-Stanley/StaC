@@ -1,153 +1,272 @@
 grammar StaC;
 
-// Parser Rules
+@header {
+    package stac.parser;
+    import stac.AST.*;
+    import java.util.ArrayList;
+    import java.util.List;
+}
 
-program
-	: ( functionDef | declaration )* EOF
-	;
+// ─── Parser Rules ────────────────────────────────────────────────────────────
 
-//declarations
-	: type IDENTIFIER ( '<=' expression | '<==' expression )? ';'
-	;
+program returns [Program ast]
+    : body=topLevel* EOF
+      { 
+        List<ASTNode> nodes = new ArrayList<>();
+        for (TopLevelContext t : $body) nodes.add(t.ast);
+        $ast = new Program(nodes);
+      }
+    ;
 
-type
-	: 'int'
-	| 'char'
-	;
+topLevel returns [ASTNode ast]
+    : functionDef  { $ast = $functionDef.ast; }
+    | declaration  { $ast = $declaration.ast; }
+    ;
 
-//functions
-functionDef
-	: type IDENTIFIER '(' paramList? ')' '{' statement* '}'
-	;
+// ─── Declarations ────────────────────────────────────────────────────────────
 
-paramList
-	: param ( ',' param )*
-	;
+declaration returns [DeclarationExp ast]
+    : t=type IDENTIFIER '<=' expression ';'
+      { $ast = new DeclarationExp($t.text, $IDENTIFIER.text, $expression.ast, false); }
+    | t=type IDENTIFIER '<==' expression ';'
+      { $ast = new DeclarationExp($t.text, $IDENTIFIER.text, $expression.ast, true); }
+    | t=type IDENTIFIER ';'
+      { $ast = new DeclarationExp($t.text, $IDENTIFIER.text, null, false); }
+    ;
 
-param
-	: type IDENTIFIER
-	;
+type returns [String text]
+    : 'int'  { $text = "int"; }
+    | 'char' { $text = "char"; }
+    ;
 
-// Statements
-statement
-	: declaration
-	| transferStmt
-    	| dumpStmt
-    	| topSwapStmt
-    	| fullSwapStmt
-    	| ifStmt
-   	| whileStmt
-    	| forStmt
-    	| returnStmt
-    	| builtinCallStmt
-    	;
-transferStmt
-    	: sink '<=' expression ';'
-    	;
+// ─── Functions ───────────────────────────────────────────────────────────────
+
+functionDef returns [FunctionDef ast]
+    : t=type IDENTIFIER '(' p=paramList? ')' '{' body=statement* '}'
+      {
+        List<Param> params = ($p != null) ? $p.ast : new ArrayList<>();
+        List<Exp> stmts = new ArrayList<>();
+        for (StatementContext s : $body) stmts.add(s.ast);
+        $ast = new FunctionDef($t.text, $IDENTIFIER.text, params, stmts);
+      }
+    ;
+
+paramList returns [List<Param> ast]
+    : first=param
+      {
+        $ast = new ArrayList<>();
+        $ast.add($first.ast);
+      }
+      ( ',' rest=param { $ast.add($rest.ast); } )*
+    ;
+
+param returns [Param ast]
+    : t=type IDENTIFIER
+      { $ast = new Param($t.text, $IDENTIFIER.text); }
+    ;
+
+// ─── Statements ──────────────────────────────────────────────────────────────
+
+statement returns [Exp ast]
+    : declaration      { $ast = $declaration.ast; }
+    | transferStmt     { $ast = $transferStmt.ast; }
+    | dumpStmt         { $ast = $dumpStmt.ast; }
+    | topSwapStmt      { $ast = $topSwapStmt.ast; }
+    | fullSwapStmt     { $ast = $fullSwapStmt.ast; }
+    | ifStmt           { $ast = $ifStmt.ast; }
+    | whileStmt        { $ast = $whileStmt.ast; }
+    | forStmt          { $ast = $forStmt.ast; }
+    | returnStmt       { $ast = $returnStmt.ast; }
+    | builtinCallStmt  { $ast = $builtinCallStmt.ast; }
+    ;
+
+transferStmt returns [TransferExp ast]
+    : s=sink '<=' e=expression ';'
+      { $ast = new TransferExp($s.text, $e.ast); }
+    ;
 
 // Chained dump — right-to-left associative
-dumpStmt
-	: sink ( '<==' expression )+ ';'
-    	;
+// e.g. print <== "Max: " <== reverse
+dumpStmt returns [DumpExp ast]
+    : s=sink ( '<==' sources+=expression )+ ';'
+      {
+        List<Exp> srcs = new ArrayList<>();
+        for (ExpressionContext e : $sources) srcs.add(e.ast);
+        $ast = new DumpExp($s.text, srcs);
+      }
+    ;
 
-topSwapStmt
-    	: IDENTIFIER '<=>' IDENTIFIER ';'
-    	;
+topSwapStmt returns [TopSwapExp ast]
+    : left=IDENTIFIER '<=>' right=IDENTIFIER ';'
+      { $ast = new TopSwapExp($left.text, $right.text); }
+    ;
 
-fullSwapStmt
-    	: IDENTIFIER '<==>' IDENTIFIER ';'
-    	;
+fullSwapStmt returns [FullSwapExp ast]
+    : left=IDENTIFIER '<==>' right=IDENTIFIER ';'
+      { $ast = new FullSwapExp($left.text, $right.text); }
+    ;
 
-returnStmt
-    	: 'return' ';'
-    	;
+returnStmt returns [ReturnExp ast]
+    : 'return' ';'
+      { $ast = new ReturnExp(); }
+    ;
 
-sink
-    	: IDENTIFIER
-    	| 'print'
-    	;
+sink returns [String text]
+    : IDENTIFIER { $text = $IDENTIFIER.text; }
+    | 'print'    { $text = "print"; }
+    ;
 
-// Control Flow
-ifStmt
-    	: 'if' '(' condition ')' '{' statement* '}'
-    	  ( 'else' '{' statement* '}' )?
-    	;
+// ─── Control Flow ────────────────────────────────────────────────────────────
 
-whileStmt
-    	: 'while' '(' condition ')' '{' statement* '}'
-    	;
+ifStmt returns [IfExp ast]
+    : 'if' '(' c=condition ')' '{' thenBody=statement* '}'
+      ( 'else' '{' elseBody=statement* '}' )?
+      {
+        List<Exp> thenStmts = new ArrayList<>();
+        for (StatementContext s : $thenBody) thenStmts.add(s.ast);
+        List<Exp> elseStmts = null;
+        if ($elseBody != null) {
+            elseStmts = new ArrayList<>();
+            for (StatementContext s : $elseBody) elseStmts.add(s.ast);
+        }
+        $ast = new IfExp($c.ast, thenStmts, elseStmts);
+      }
+    ;
 
-forStmt
-    	: 'for' '(' declaration condition ';' forStep ')' '{' statement* '}'
-    	;
+whileStmt returns [WhileExp ast]
+    : 'while' '(' c=condition ')' '{' body=statement* '}'
+      {
+        List<Exp> stmts = new ArrayList<>();
+        for (StatementContext s : $body) stmts.add(s.ast);
+        $ast = new WhileExp($c.ast, stmts);
+      }
+    ;
 
-forStep
-    	: IDENTIFIER '<=' expression
-    	;
+forStmt returns [ForExp ast]
+    : 'for' '(' init=declaration c=condition ';' step=forStep ')' '{' body=statement* '}'
+      {
+        List<Exp> stmts = new ArrayList<>();
+        for (StatementContext s : $body) stmts.add(s.ast);
+        $ast = new ForExp($init.ast, $c.ast, $step.ast, stmts);
+      }
+    ;
 
-// Conditions — never consume values
-condition
-    	: expression compOp expression      // comparison
-    	| '!' IDENTIFIER                    // logical not: stack is empty
-    	| IDENTIFIER                        // truthy: stack is non-empty
-    	| 'empty' '(' IDENTIFIER ')'        // explicit empty check
-    	| '!' 'empty' '(' IDENTIFIER ')'    // explicit non-empty check
-    	;
+forStep returns [TransferExp ast]
+    : IDENTIFIER '<=' e=expression
+      { $ast = new TransferExp($IDENTIFIER.text, $e.ast); }
+    ;
 
-compOp
-    	: '<'
-    	| '>'
-    	| '='
-    	| '!='
-    	| '!<'
-    	| '!>'
-    	;
+// ─── Conditions ──────────────────────────────────────────────────────────────
 
-// Expressions — always consume
-expression
-    	: term ( ( '+' | '-' ) term )*
-    	;
+condition returns [Condition ast]
+    : left=expression op=compOp right=expression
+      { $ast = new ComparisonCondition($left.ast, $op.text, $right.ast); }
+    | '!' IDENTIFIER
+      { $ast = new EmptyCondition($IDENTIFIER.text); }
+    | IDENTIFIER
+      { $ast = new TruthyCondition($IDENTIFIER.text); }
+    | 'empty' '(' IDENTIFIER ')'
+      { $ast = new EmptyCondition($IDENTIFIER.text); }
+    | '!' 'empty' '(' IDENTIFIER ')'
+      { $ast = new TruthyCondition($IDENTIFIER.text); }
+    ;
 
-term
-    	: factor ( ( '*' | '/' | '%' ) factor )*
-    	;
+compOp returns [String text]
+    : '<'   { $text = "<"; }
+    | '>'   { $text = ">"; }
+    | '='   { $text = "="; }
+    | '!='  { $text = "!="; }
+    | '!<'  { $text = "!<"; }
+    | '!>'  { $text = "!>"; }
+    ;
 
-factor
-    	: IDENTIFIER
-    	| literal
-    	| functionCall
-    	| builtinExpr
-    	| '(' expression ')'
-    	;
+// ─── Expressions ─────────────────────────────────────────────────────────────
 
-functionCall
-    	: IDENTIFIER '(' argList? ')'
-    	;
+expression returns [Exp ast]
+    : left=term { $ast = $left.ast; }
+      ( '+' right=term { $ast = new AddExp($ast, $right.ast); }
+      | '-' right=term { $ast = new SubExp($ast, $right.ast); }
+      )*
+    ;
 
-argList
-    	: IDENTIFIER ( ',' IDENTIFIER )*
-    	;
+term returns [Exp ast]
+    : left=factor { $ast = $left.ast; }
+      ( '*' right=factor { $ast = new MulExp($ast, $right.ast); }
+      | '/' right=factor { $ast = new DivExp($ast, $right.ast); }
+      | '%' right=factor { $ast = new ModExp($ast, $right.ast); }
+      )*
+    ;
 
-builtinExpr
-    	: 'randInt' '(' expression ',' expression ')'
-    	| 'scanInt' '(' ')'
-    	| 'scan' '(' ')'
-    	| 'depth' '(' IDENTIFIER ')'
-    	;
+factor returns [Exp ast]
+    : IDENTIFIER    { $ast = new VarExp($IDENTIFIER.text); }
+    | literal       { $ast = $literal.ast; }
+    | functionCall  { $ast = $functionCall.ast; }
+    | builtinExpr   { $ast = $builtinExpr.ast; }
+    | '(' expression ')' { $ast = $expression.ast; }
+    ;
 
-builtinCallStmt
-    	: ( 'dup' | 'pop' ) '(' IDENTIFIER ')' ';'
-    	;
+functionCall returns [FunctionCallExp ast]
+    : IDENTIFIER '(' a=argList? ')'
+      {
+        List<String> args = ($a != null) ? $a.ast : new ArrayList<>();
+        $ast = new FunctionCallExp($IDENTIFIER.text, args);
+      }
+    ;
+
+argList returns [List<String> ast]
+    : first=IDENTIFIER
+      {
+        $ast = new ArrayList<>();
+        $ast.add($first.text);
+      }
+      ( ',' rest=IDENTIFIER { $ast.add($rest.text); } )*
+    ;
+
+builtinExpr returns [Exp ast]
+    : 'randInt' '(' min=expression ',' max=expression ')'
+      { $ast = new RandIntExp($min.ast, $max.ast); }
+    | 'scanInt' '(' ')'
+      { $ast = new ScanIntExp(); }
+    | 'scan' '(' ')'
+      { $ast = new ScanExp(); }
+    | 'depth' '(' IDENTIFIER ')'
+      { $ast = new DepthExp($IDENTIFIER.text); }
+    ;
+
+builtinCallStmt returns [Exp ast]
+    : 'dup' '(' IDENTIFIER ')' ';'
+      { $ast = new DupExp($IDENTIFIER.text); }
+    | 'pop' '(' IDENTIFIER ')' ';'
+      { $ast = new PopExp($IDENTIFIER.text); }
+    ;
 
 // ─── Literals ────────────────────────────────────────────────────────────────
-// string_literal is a char stack with the LAST character on top.
-// Always use <== to load a full string — <= only pushes the last character.
 
-literal
-    	: INT_LITERAL
-    	| CHAR_LITERAL
-    	| STRING_LITERAL
-    	;
+literal returns [Exp ast]
+    : INT_LITERAL
+      { $ast = new IntLiteralExp(Integer.parseInt($INT_LITERAL.text)); }
+    | CHAR_LITERAL
+      {
+        // strip surrounding quotes and handle escape sequences
+        String raw = $CHAR_LITERAL.text;
+        raw = raw.substring(1, raw.length() - 1);
+        char val = raw.equals("\\n") ? '\n'
+                 : raw.equals("\\t") ? '\t'
+                 : raw.equals("\\r") ? '\r'
+                 : raw.equals("\\\\") ? '\\'
+                 : raw.equals("\\'") ? '\''
+                 : raw.equals("\\\"") ? '"'
+                 : raw.charAt(0);
+        $ast = new CharLiteralExp(val);
+      }
+    | STRING_LITERAL
+      {
+        // strip surrounding quotes
+        String raw = $STRING_LITERAL.text;
+        raw = raw.substring(1, raw.length() - 1);
+        $ast = new StringLiteralExp(raw);
+      }
+    ;
 
 // ─── Lexer Rules ─────────────────────────────────────────────────────────────
 
