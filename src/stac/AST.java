@@ -58,7 +58,7 @@ public interface AST {
 	public static abstract class Exp extends ASTNode {}
 
 	// literals
-	public static IntLiteralExp extends Exp {
+	public static class IntLiteralExp extends Exp {
 		int _val;
 		public IntLiteralExp(int val) { _val = val; }
 		public int val() { return _val; }
@@ -191,12 +191,12 @@ public interface AST {
 			_type		= type;
 			_name		= name;
 			_initializer 	= initializer;
-			_isDump 	= isDump
+			_isDump 	= isDump;
 		}
 		public String type()	{ return _type; }
 		public String name()	{ return _name; }
 		public Exp initializer(){ return _initializer; }
-		public boolean isDump	{ return _isDump; }
+		public boolean isDump()	{ return _isDump; }
 		public <T> T accept(Visitor<T> visitor) {
 			return visitor.visit(this);
 		}
@@ -273,7 +273,7 @@ public interface AST {
 
 	public static class PopExp extends Exp {
 		String _name;
-		public PopExp(String name) { _name = name }
+		public PopExp(String name) { _name = name; }
 		public String name() {return _name; }
 		public <T> T accept(Visitor<T> visitor) {
 				return visitor.visit(this); 
@@ -317,7 +317,7 @@ public interface AST {
 		Condition _condition;
 		TransferExp _step;
 		List<Exp> _body;
-		public ForExp(DeclarationExp init, Condition condition, TransferExp step List<Exp> body){
+		public ForExp(DeclarationExp init, Condition condition, TransferExp step,  List<Exp> body){
 			_init		= init;
 			_condition	= condiiton;
 			_step		= step;

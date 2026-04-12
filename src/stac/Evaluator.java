@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
-import java.util.Scanner
+import java.util.Scanner;
 
 public class Evaluator implements Visitor<StackVal> {
 	
@@ -17,7 +17,7 @@ public class Evaluator implements Visitor<StackVal> {
 	//maps funciton names to their definitions
 	private HashMap<String, FunctionDef> _functions = new HashMap<>();
 
-	private Random _random = new Scanner(System.in);
+	private Random _random = new Random();
 	private Scanner _scanner = new Scanner(System.in);
 
 	//entry point - scans for all functin defs and calls main
@@ -50,15 +50,19 @@ public class Evaluator implements Visitor<StackVal> {
 		return null;
 	}
 
+	public StackVal visit (FunctionDef e) {
+		return null;
+	}
+
 	@Override
 	public StackVal visit(Param e) {
 		return null;
 	}
 
 	// function calls
-	private StackVAl callFunction(FuncitonDef def, List<StackVal> args) {
+	private StackVal callFunction(FunctionDef def, List<StackVal> args) {
 		//save current env
-		HashMap<String, StackVal> saveEnv = new HashMap<>(_env);
+		HashMap<String, StackVal> savedEnv = new HashMap<>(_env);
 
 		//bind arguements
 		List<Param> params = def.params();
@@ -94,7 +98,7 @@ public class Evaluator implements Visitor<StackVal> {
 	
 	@Override
 	public StackVal visit(FunctionCallExp e) {
-		if(!_functions.contiansKey(e.name())) {
+		if(!_functions.containsKey(e.name())) {
 			throw new RuntimeException("Undefined function: " + e.name());
 		}
 		FunctionDef def = _functions.get(e.name());
@@ -114,7 +118,7 @@ public class Evaluator implements Visitor<StackVal> {
 	@Override
 	public StackVal visit(DeclarationExp e) {
 		StackVal stack = new StackVal(e.type());
-		_env.put(e.name, stack);
+		_env.put(e.name(), stack);
 
 		if (e.initializer() != null) {
 			// '<==' assignment 
@@ -136,9 +140,9 @@ public class Evaluator implements Visitor<StackVal> {
 	//TODO: Implement below
 	//transfers
 	@Override
-	Public StackVal visit(TransferExp e){}
+	public StackVal visit(TransferExp e){}
 	@Override
-	Public StackVal visit(DumpExp e) {}
+	public StackVal visit(DumpExp e) {}
 
 	// swap
 	@Override
@@ -160,16 +164,16 @@ public class Evaluator implements Visitor<StackVal> {
 	@Override
 	public StackVal visit(ScanIntExp e) {}
 	@Override 
-	public StackVAl visit(ScanExp e) {}
+	public StackVal visit(ScanExp e) {}
 	@Override
 	public StackVal visit(DepthExp e) {}
 
 	// control flow
 	@Override
 	public StackVal visit(IfExp e) {}
-	@override
+	@Override
 	public StackVal visit(WhileExp e) {}
-	@override
+	@Override
 	public StackVal visit (ForExp e) {}
 
 	// Conditions
@@ -233,13 +237,7 @@ public class Evaluator implements Visitor<StackVal> {
 			System.out.print((char) val);
 		}
 		else{
-			Systen.out.print(val);
+			System.out.print(val);
 		}
 	}
 }
-	
-	
-
-	
-	
-	
