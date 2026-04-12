@@ -9,9 +9,9 @@ public interface AST {
 		public abstract <T> T accept(Visitor<T> visitor);
 	}
 	// top level
-	public static class Program extends ASTNODE {
-		List<ASTNODE> _body;
-		public Program(List<ASTNODE> boyd) {
+	public static class Program extends ASTNode {
+		List<ASTNode> _body;
+		public Program(List<ASTNode> body) {
 			_body = body;
 		}
 		public List<ASTNode> body() { return _body; }
@@ -20,7 +20,7 @@ public interface AST {
 		}
 	}
 	// func definition lives at top level of program
-	public static class FucntionDef extends ASTNode {
+	public static class FunctionDef extends ASTNode {
 		String _returnType;
 		String _name;
 		List<Param> _params;
@@ -96,8 +96,8 @@ public interface AST {
 
 	// arithmetic
 	public static abstract class BinaryExp extends Exp {
-		exp _left;
-		exp _right;
+		Exp _left;
+		Exp _right;
 		public BinaryExp(Exp left, Exp right) {
 			_left = left;
 			_right = right;
@@ -218,7 +218,7 @@ public interface AST {
 	}
 
 	// dump
-	public static class DumpExp extends exp {
+	public static class DumpExp extends Exp {
 		String _sink;
 		List<Exp> _sources;
 		public DumpExp(String sink, List<Exp> sources) {
@@ -280,9 +280,15 @@ public interface AST {
 		}
 	}
 
+	public static class ReturnExp extends Exp {
+		public <T> T accept(Visitor<T> visitor) {
+				return visitor.visit(this); 
+		}
+	}
+
 	//control flow
 	public static class IfExp extends Exp {
-		condition _condition;
+		Condition _condition;
 		List<Exp> _thenBody;
 		List<Exp> _elseBody;
 		public IfExp(Condition condition, List<Exp> thenBody, List<Exp> elseBody) {
@@ -313,13 +319,13 @@ public interface AST {
 	}
 
 	public static class ForExp extends Exp {
-		Declaration _init;
+		DeclarationExp _init;
 		Condition _condition;
 		TransferExp _step;
 		List<Exp> _body;
 		public ForExp(DeclarationExp init, Condition condition, TransferExp step,  List<Exp> body){
 			_init		= init;
-			_condition	= condiiton;
+			_condition	= condition;
 			_step		= step;
 			_body		= body;
 		}
@@ -334,7 +340,7 @@ public interface AST {
 
 	// conditions
 //
-	public static class Condition extends ASTNode {}
+	public static abstract class Condition extends ASTNode {}
 	
 	public static class ComparisonCondition extends Condition {
 		Exp _left;

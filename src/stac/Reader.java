@@ -7,14 +7,15 @@ import org.antlr.v4.runtime.*;
 import stac.parser.*;
 import stac.AST.*;
 
+//if StaCParser and getParser are generating errors, make sure to run the ANTLR tool on the grammar file to generate the parser and lexer classes
 public class Reader {
-	public Porgram read(String fileName) throws IOException {
+	public Program read(String fileName) throws IOException {
 		String programText = readFile(fileName);
 		return parse(programText);
 	}
 	public Program parse(String programText) {
 		Lexer l = getLexer(new ANTLRInputStream(programText));
-		StaCParser p = getParser(new CommonTokenStream(1));
+		StaCParser p = getParser(new CommonTokenStream(l));
 		Program program = p.program().ast;
 		return program;
 	}
@@ -25,9 +26,9 @@ public class Reader {
 		return new StaCParser(s);
 	}
 	private String readFile(String fileName) throws IOException {
-		try(BufferedReader br = new BufferedReader(new FIleReader(filename))){
+		try(BufferedReader br = new BufferedReader(new FileReader(fileName))){
 			StringBuilder sb = new StringBuilder();
-			Stirng line = br.readLine();
+			String line = br.readLine();
 			while (line != null) {
 				sb.append(line);
 				sb.append(System.lineSeparator());

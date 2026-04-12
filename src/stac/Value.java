@@ -4,7 +4,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 public class Value{
-	public stati class StackVal {
+	public static class StackVal {
 		private Deque<Integer> _stack;
 		private String _type; // only 'int' or 'char' for now
 		

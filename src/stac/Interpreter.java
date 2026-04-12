@@ -15,7 +15,7 @@ public class Interpreter {
 		Program p = null;
 		try {
 			p = reader.read(args[0]);
-			if(p == null || p.boyd() == null || p.body().isEmpty()){
+			if(p == null || p.body() == null || p.body().isEmpty()){
 				System.out.println("Error: empty program.");
 				return;
 			}
