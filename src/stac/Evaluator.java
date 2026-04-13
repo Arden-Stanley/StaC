@@ -412,7 +412,7 @@ public class Evaluator implements Visitor<StackVal> {
 						.replace("\\\"", "\"")
 						.replace("\\\\", "\\")
 						;
-		for (int i = s.length() - 1; i >= 0; i--){
+		for (int i = 0; i < s.length(); i++){
 			result.push((int) s.charAt(i));
 		}
 		return result;
@@ -481,7 +481,7 @@ public class Evaluator implements Visitor<StackVal> {
 	
 	private void dumpInto(StackVal dest, StackVal source) {
 		List<Integer> vals = new ArrayList<>(source.raw());
-		for (int i = vals.size() - 1; i >= 0; i--){
+		for (int i = 0; i < vals.size(); i++){
 			dest.push(vals.get(i));
 		}
 	}
