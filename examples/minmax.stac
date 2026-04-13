@@ -2,22 +2,19 @@
 // nums is the number stack
 // returns a stack with the minumum value on top
 int findMin(int nums){
-	//assume value on top is the minimum
-	int current <= nums;
-	
+    //assume value on top is the minimum
+	findMin <= nums;
 	while(nums){
 		//push as return value if the top on nums is less than known min
-		if(nums < current){
-			pop(current);
-            dup(nums);
-            current <= nums;
+		if(nums < findMin){
+			findMin <= nums;
 		}
 		//pop top of nums, a new minimum is not found
 		else{
 			pop(nums);
 		}
 	}
-	findMin <= current;
+	
 	return;
 }
 
@@ -27,18 +24,16 @@ int findMin(int nums){
 int findMax(int nums){
 	//assume value on top is the maximum
 	findMax <= nums;
-	
 	while(nums){
-		//push as return value if the top on nums is less than known min
+		//push as return value if the top on nums is more than the known max
 		if(nums > findMax){
 			findMax <= nums;
 		}
-		//pop top of nums, a new minimum is not found
+		//pop top of nums, a new maximum is not found
 		else{
 			pop(nums);
 		}
 	}
-	
 	return;
 }
 
@@ -62,7 +57,6 @@ int main(){
 	}
 	
 	int min <= findMin(nums);
-    print <= min;
 	int max <= findMax(nums);
 	
     output <== "Max: ";
