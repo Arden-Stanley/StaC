@@ -14,7 +14,7 @@ To run a StaC file run the following:
 If that fails run this:
 
 ```bash
-chmod -x StaC.sh
+chmod +x StaC.sh
 ```
 
 then run the command above.
