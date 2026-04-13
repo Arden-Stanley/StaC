@@ -1,0 +1,15 @@
+// ammendments from documents
+// * i though i was clever using the truthyness property of the stacks,
+//   but as it turns out the value '0' is not empty. silly me.
+// * also added some prints to make it look nicer.
+
+int main(){
+	int count <= 5;
+	while(count != 0){
+		int n <= randInt(1, 100);
+		print <= n;
+        print <= ' ';
+		count <= count - 1;
+	}
+    print <= '\n';
+}
