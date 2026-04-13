@@ -100,6 +100,7 @@ public class Evaluator implements Visitor<StackVal> {
 	private StackVal callFunction(FunctionDef def, List<StackVal> args) {
 		//save current env
 		HashMap<String, StackVal> savedEnv = new HashMap<>(_env);
+		_env = new HashMap<>();
 
 		//bind arguements
 		List<Param> params = def.params();
