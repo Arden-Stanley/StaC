@@ -1,5 +1,6 @@
-//ammendment to documentation.
-//I forgot to declare 'rem'
+// ammendments from docs example
+// * rem was never defined in the docs. It is defined here;
+// * i had an error where i transfered a character into print, instead of dumping the entire string
 
 int main(){
     char prompt_start <== "Enter start: ";
@@ -8,19 +9,18 @@ int main(){
     int start <= scanInt();
     print <== prompt_end;
     int end <= scanInt();
-
-    int rem;
     for (int i <= start; i !> end; i <= i + 1){
+        int rem;
         dup(i);
         print <= i;
         dup(i);
         rem <= i % 2;
         if(rem = 0){
-            char even <= " even\n";
+            char even <== " even\n";
             print <== even;
         }
         else{
-            char odd <= " odd\n";
+            char odd <== " odd\n";
             print <== odd;
         }
     }
