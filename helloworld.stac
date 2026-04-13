@@ -1,0 +1,4 @@
+int main(){
+	char output <== "Hello World!\n";
+	print <== output;
+}

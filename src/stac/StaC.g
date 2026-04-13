@@ -1,7 +1,6 @@
 grammar StaC;
 
-@header {
-    package stac.parser;
+@parser::header {
     import stac.AST.*;
     import java.util.ArrayList;
     import java.util.List;
@@ -13,7 +12,7 @@ program returns [Program ast]
     : body=topLevel* EOF
       { 
         List<ASTNode> nodes = new ArrayList<>();
-        for (TopLevelContext t : $body) nodes.add(t.ast);
+        for (TopLevelContext t : $ctx.topLevel()) nodes.add(t.ast);
         $ast = new Program(nodes);
       }
     ;
@@ -42,11 +41,11 @@ type returns [String text]
 // ─── Functions ───────────────────────────────────────────────────────────────
 
 functionDef returns [FunctionDef ast]
-    : t=type IDENTIFIER '(' p=paramList? ')' '{' body=statement* '}'
+    : t=type IDENTIFIER '(' paramList? ')' '{' statement* '}'
       {
-        List<Param> params = ($p != null) ? $p.ast : new ArrayList<>();
+        List<Param> params = ($ctx.paramList() != null) ? $ctx.paramList().ast : new ArrayList<>();
         List<Exp> stmts = new ArrayList<>();
-        for (StatementContext s : $body) stmts.add(s.ast);
+        for (StatementContext s : $ctx.statement()) stmts.add(s.ast);
         $ast = new FunctionDef($t.text, $IDENTIFIER.text, params, stmts);
       }
     ;
@@ -117,37 +116,36 @@ sink returns [String text]
     ;
 
 // ─── Control Flow ────────────────────────────────────────────────────────────
+// block is a helper rule to avoid ambiguity with two statments in ifStmt
+block returns [List<Exp> ast]
+  : '{' statement* '}'
+    {
+      $ast = new ArrayList<>();
+      for (StatementContext s : $ctx.statement()) $ast.add(s.ast);
+    }
+  ;
+
 
 ifStmt returns [IfExp ast]
-    : 'if' '(' c=condition ')' '{' thenBody=statement* '}'
-      ( 'else' '{' elseBody=statement* '}' )?
+    : 'if' '(' c=condition ')' thenBlock=block
+      ( 'else' elseBlock=block )?
       {
-        List<Exp> thenStmts = new ArrayList<>();
-        for (StatementContext s : $thenBody) thenStmts.add(s.ast);
-        List<Exp> elseStmts = null;
-        if ($elseBody != null) {
-            elseStmts = new ArrayList<>();
-            for (StatementContext s : $elseBody) elseStmts.add(s.ast);
-        }
-        $ast = new IfExp($c.ast, thenStmts, elseStmts);
+        List<Exp> elseStmts = ($ctx.elseBlock != null) ? $ctx.elseBlock.ast : null;
+        $ast = new IfExp($c.ast, $ctx.thenBlock.ast, elseStmts);
       }
     ;
 
 whileStmt returns [WhileExp ast]
-    : 'while' '(' c=condition ')' '{' body=statement* '}'
+    : 'while' '(' c=condition ')' block
       {
-        List<Exp> stmts = new ArrayList<>();
-        for (StatementContext s : $body) stmts.add(s.ast);
-        $ast = new WhileExp($c.ast, stmts);
+        $ast = new WhileExp($c.ast, $ctx.block().ast);
       }
     ;
 
 forStmt returns [ForExp ast]
-    : 'for' '(' init=declaration c=condition ';' step=forStep ')' '{' body=statement* '}'
+    : 'for' '(' init=declaration c=condition ';' step=forStep ')' block
       {
-        List<Exp> stmts = new ArrayList<>();
-        for (StatementContext s : $body) stmts.add(s.ast);
-        $ast = new ForExp($init.ast, $c.ast, $step.ast, stmts);
+        $ast = new ForExp($init.ast, $c.ast, $step.ast, $ctx.block().ast);
       }
     ;
 
@@ -208,7 +206,7 @@ factor returns [Exp ast]
 functionCall returns [FunctionCallExp ast]
     : IDENTIFIER '(' a=argList? ')'
       {
-        List<String> args = ($a != null) ? $a.ast : new ArrayList<>();
+        List<String> args = ($ctx.argList() != null) ? $ctx.argList().ast : new ArrayList<>();
         $ast = new FunctionCallExp($IDENTIFIER.text, args);
       }
     ;

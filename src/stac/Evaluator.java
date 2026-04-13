@@ -178,7 +178,8 @@ public class Evaluator implements Visitor<StackVal> {
 
 	// Conditions
 	private boolean evalConditon(Condition c) {
-		return (boolean) c.accept(this);
+		StackVal result = c.accept(this);
+		return !result.isEmpty() && result.peek() != 0;
 	}
 	
 	@Override
