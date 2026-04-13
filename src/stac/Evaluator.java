@@ -405,8 +405,14 @@ public class Evaluator implements Visitor<StackVal> {
 	@Override
 	public StackVal visit(StringLiteralExp e) {
 		StackVal result = new StackVal("char");
-		String s = e.val();
-		for (int i = 0; i < s.length(); i++){
+		String s = e.val()
+						.replace("\\n", "\n")
+						.replace("\\t", "\t")
+						.replace("\\r", "\r")
+						.replace("\\\"", "\"")
+						.replace("\\\\", "\\")
+						;
+		for (int i = s.length() - 1; i >= 0; i--){
 			result.push((int) s.charAt(i));
 		}
 		return result;
