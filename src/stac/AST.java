@@ -79,6 +79,7 @@ public interface AST {
 	public static class StringLiteralExp extends Exp {
 		String _val;
 		public StringLiteralExp(String val) { _val = val; }
+		public String val() { return _val; }
 		public <T> T accept(Visitor<T> visitor) {
 			return visitor.visit(this);
 		}
