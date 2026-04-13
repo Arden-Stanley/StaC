@@ -1,0 +1,77 @@
+// finds the minimum value
+// nums is the number stack
+// returns a stack with the minumum value on top
+int findMin(int nums){
+	//assume value on top is the minimum
+	int current <= nums;
+	
+	while(nums){
+		//push as return value if the top on nums is less than known min
+		if(nums < current){
+			pop(current);
+            dup(nums);
+            current <= nums;
+		}
+		//pop top of nums, a new minimum is not found
+		else{
+			pop(nums);
+		}
+	}
+	findMin <= current;
+	return;
+}
+
+//finds the maxiumum value
+// nums is the number stack
+// returns a stack with the maximum value on the top
+int findMax(int nums){
+	//assume value on top is the maximum
+	findMax <= nums;
+	
+	while(nums){
+		//push as return value if the top on nums is less than known min
+		if(nums > findMax){
+			findMax <= nums;
+		}
+		//pop top of nums, a new minimum is not found
+		else{
+			pop(nums);
+		}
+	}
+	
+	return;
+}
+
+int main(){
+	int n;
+	int nums;
+	
+	char output <== "How many numbers do you want to add?\n";
+	print <== output;
+	n <= scanInt();
+	
+	output <== "Please insert ";
+    print <== output;
+    dup(n);
+    print <= n;
+    output <== " numbers. \n";
+	print <== output;
+
+	for(int i <= 0; i < n; i <= i + 1){
+		nums <= scanInt();
+	}
+	
+	int min <= findMin(nums);
+    print <= min;
+	int max <= findMax(nums);
+	
+    output <== "Max: ";
+    print <== output;
+    print <= max;
+    print <= '\n';
+
+    output <== "Min: ";
+    print <== output;
+    print <= min;
+    print <= '\n';
+}
